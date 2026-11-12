@@ -26,7 +26,7 @@
       // 그리드 옆 광고판 문구 (영문 대문자·숫자). 'LOGO' 는 KLD 로고 간판.
       sponsors: ['LOGO', 'KOREA LONG DRIVE', 'GO LONG', 'LOGO', 'FULL SEND', '400 CLUB'],
       // 공유할 때 붙는 주소. 비워 두면 현재 페이지 주소를 쓴다. (배포 후 실제 주소로 채우는 것을 권장)
-      shareUrl: 'https://kld-longdrive.vercel.app',
+      shareUrl: 'https://kld-longdrive-two.vercel.app',
       hashtags: ['KLD', '코리아롱드라이브', '장타', '장타왕'],
       // 결과 화면에서 KLD로 나가는 버튼. url 을 비워 두면 버튼이 나오지 않는다.
       cta: { label: { ko: 'KLD 인스타그램 보기', en: 'KLD ON INSTAGRAM' }, url: 'https://www.instagram.com/korea_longdrive/' },
