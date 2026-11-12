@@ -326,7 +326,7 @@
       }
       if (!list.length) { add(body, el('p', 'dim center', t('world.empty'))); return; }
       var tbl = el('div', 'rank-list');
-      var myName = d.lastName || 'PLAYER', marked = false;
+      var myName = d.best > 0 ? on.displayName() : '', marked = false;
       list.forEach(function (r, i) {
         var isMe = !marked && d.best > 0 && r.name === myName && Math.abs(r.meters - d.best) < 0.02;
         if (isMe) marked = true;

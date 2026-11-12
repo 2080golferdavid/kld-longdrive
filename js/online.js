@@ -38,6 +38,14 @@
     return d.onlineToken;
   }
 
+  // 랭킹에 보이는 이름. 이름을 안 적었으면 기기마다 고정된 번호를 붙인다 (PLR4821 — 이름은 최대 8자라서 PLAYER 대신 PLR).
+  function displayName() {
+    var n = KLD.storage.get().lastName;
+    if (n) return n;
+    var num = parseInt(token().slice(0, 8), 16) % 10000;
+    return 'PLR' + ('000' + num).slice(-4);
+  }
+
   function rpc(fn, body) {
     return new Promise(function (resolve) {
       var c = cfg(), ctl = null, to = null;
@@ -60,7 +68,7 @@
     var d = KLD.storage.get();
     if (!enabled() || !(d.best > 0)) return Promise.resolve(null);
     return rpc('ld_submit_score', {
-      p_token: token(), p_name: d.lastName || '', p_m: d.best,
+      p_token: token(), p_name: displayName(), p_m: d.best,
       p_stage: Math.max(0, d.bestStage), p_lang: KLD.i18n ? KLD.i18n.lang() : 'ko'
     }).then(function (r) { if (r && r.rank) last = r; return r && r.rank ? r : null; });
   }
@@ -88,7 +96,7 @@
     return Math.max(1, Math.min(100, Math.ceil(rank / total * 100)));
   }
 
-  var api = { enabled: enabled, submit: submit, submitSoon: submitSoon, top: top, standing: standing, pct: pct, last: function () { return last; } };
+  var api = { enabled: enabled, displayName: displayName, submit: submit, submitSoon: submitSoon, top: top, standing: standing, pct: pct, last: function () { return last; } };
   KLD.online = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
