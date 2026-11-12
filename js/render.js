@@ -672,6 +672,88 @@
     T.draw(g, s.text, x, y, { scale: sc, color: s.color, outline: cur.th.ink, align: 'center' });
   }
 
+  // 픽셀 원 테두리 (중점 알고리즘). 안티앨리어싱 없이 th 픽셀 두께.
+  function ringPx(g, cx, cy, r, color, th) {
+    if (r < 1) return;
+    g.fillStyle = color;
+    var x = Math.round(r), y = 0, err = 1 - x;
+    while (x >= y) {
+      g.fillRect(cx + x, cy + y, th, th); g.fillRect(cx - x, cy + y, th, th);
+      g.fillRect(cx + x, cy - y, th, th); g.fillRect(cx - x, cy - y, th, th);
+      g.fillRect(cx + y, cy + x, th, th); g.fillRect(cx - y, cy + x, th, th);
+      g.fillRect(cx + y, cy - x, th, th); g.fillRect(cx - y, cy - x, th, th);
+      y++;
+      if (err < 0) err += 2 * y + 1; else { x--; err += 2 * (y - x) + 1; }
+    }
+  }
+
+  /*
+   * KLD SMASH 연출 (레드존 퍼펙트): 임팩트 지점에서 퍼지는 충격파 링·집중선·불꽃, 위아래 레터박스, 큰 배너.
+   * 모든 움직임은 경과 시간(age)에서 바로 계산한다 (상태를 따로 갖지 않는다). '움직임 줄이기'면 배너만 정지 상태로 보여 준다.
+   */
+  function drawSmash(G) {
+    var s = G.smash;
+    if (!s || s.t <= 0) return;
+    var g = V.g, W = V.L.world, age = s.dur - s.t, calm = !!G.reduceMotion;
+    var bx = wx(0) + 4, by = gy(0) - 6, i, rr;
+    var ink = cur.th.ink, GOLD = COL.gold;
+
+    g.save();
+    g.beginPath(); g.rect(W.x, W.y, W.w, W.h); g.clip();
+
+    if (!calm) {
+      var rand = P.rng(s.seed || 1);
+      // 집중선: 임팩트에서 사방으로 뻗는다
+      if (age < 0.6) {
+        var k = age / 0.6, n = 24;
+        for (i = 0; i < n; i++) {
+          var a = (i / n) * Math.PI * 2 + (rand() - 0.5) * 0.18;
+          var r0 = 14 + age * 110 + rand() * 10, r1 = r0 + 26 + 90 * (1 - k) + rand() * 30;
+          P.line(g, bx + Math.cos(a) * r0, by + Math.sin(a) * r0, bx + Math.cos(a) * r1, by + Math.sin(a) * r1,
+            (i % 3 === 0) ? '#ffffff' : GOLD, (k < 0.4 && i % 2 === 0) ? 2 : 1);
+        }
+      }
+      // 충격파 링 두 겹
+      for (i = 0; i < 2; i++) {
+        rr = (age - i * 0.09) * 300;
+        if (rr > 2 && rr < 260) ringPx(g, Math.round(bx), Math.round(by), rr, i ? GOLD : '#fff6c0', rr < 90 ? 3 : 2);
+      }
+      // 불꽃: 중력을 받으며 흩어진다
+      if (age < 1.0) {
+        for (i = 0; i < 44; i++) {
+          var sa = rand() * Math.PI * 2, sp = 50 + rand() * 170, life = 0.5 + rand() * 0.5;
+          if (age > life) continue;
+          var px = bx + Math.cos(sa) * sp * age, py = by + Math.sin(sa) * sp * age + 90 * age * age;
+          g.fillStyle = (i % 3 === 0) ? '#ffffff' : ((i % 3 === 1) ? GOLD : '#ff8f85');
+          g.fillRect(Math.round(px), Math.round(py), (i % 4 === 0) ? 2 : 1, (i % 4 === 0) ? 2 : 1);
+        }
+      }
+      // 레터박스: 빠르게 들어왔다가 끝에서 물러난다
+      var barK = P.smooth(Math.min(1, age / 0.1)) * Math.min(1, (s.dur - age) / 0.25);
+      var bh = Math.round(13 * barK);
+      if (bh > 0) { P.rect(g, W.x, W.y, W.w, bh, '#070a1c'); P.rect(g, W.x, W.y + W.h - bh, W.w, bh, '#070a1c'); }
+    }
+
+    // 배너: KLD 로고 + SMASH!!
+    var fade = s.dur - age < 0.25 && Math.floor(age * 20) % 2 === 1;
+    if (!fade) {
+      var cx = W.x + Math.round(W.w / 2), cy = W.y + Math.round(W.h * 0.3);
+      var sc = calm ? 4 : (age < 0.07 ? 7 : (age < 0.14 ? 5 : 4));
+      var fit = Math.floor((W.w - 12) / T.measure('SMASH!!', { scale: 1 }));
+      sc = Math.max(2, Math.min(sc, fit));
+      var jx = (!calm && age < 0.4) ? Math.round(Math.sin(age * 150) * 2) : 0;
+      var jy = (!calm && age < 0.4) ? Math.round(Math.cos(age * 130) * 2) : 0;
+      var word = 'SMASH!!';
+      var col = (!calm && age < 0.6 && Math.floor(age * 14) % 2 === 1) ? '#ffffff' : GOLD;
+      var ty = cy + jy;
+      if (hasLogo()) KLD.logo.drawFit(g, 'mark', cx + jx, ty - 4, Math.min(W.w - 20, 118), { variant: 'light', align: 'center', valign: 'bottom', outline: ink });
+      else T.draw(g, 'KLD', cx + jx, ty - 4 - 14, { scale: 2, color: '#ffffff', outline: ink, align: 'center' });
+      T.draw(g, word, cx + jx + Math.max(1, sc >> 1), ty + Math.max(1, sc >> 1), { scale: sc, color: '#e60012', outline: ink, align: 'center' });
+      T.draw(g, word, cx + jx, ty, { scale: sc, color: col, outline: ink, align: 'center' });
+    }
+    g.restore();
+  }
+
   function drawWorld(G) {
     var g = V.g, L = V.L;
     ensureCaches();
@@ -1305,7 +1387,7 @@
           g.fillRect(L.x, L.y, bw, L.h); g.fillRect(L.x + L.w - bw, L.y, bw, L.h);
         }
       } else {
-        g.globalAlpha = k * Math.min(0.5, G.flash.alpha || 0.5);
+        g.globalAlpha = k * Math.min(G.flash.max || 0.5, G.flash.alpha || 0.5);
         g.fillStyle = G.flash.color || '#ffffff';
         g.fillRect(0, 0, V.W, V.H);
         g.globalAlpha = 1;
@@ -1327,6 +1409,7 @@
     g.fillStyle = '#070a1c';
     g.fillRect(0, 0, V.W, V.H);
     drawWorld(G);
+    drawSmash(G);
     if (G.showTitle) drawTitle(G);
     if (G.showHud) {
       if (!drawSpeedPop(G)) drawLive(G);

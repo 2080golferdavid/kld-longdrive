@@ -525,6 +525,17 @@
       }
       duck(0.5, 0.25);
     },
+    // KLD SMASH(레드존 퍼펙트): 땅을 울리는 저음 + 갈라지는 고음 + 위로 치솟는 팡파르
+    smash: function (t) {
+      var i, up = [523, 659, 784, 1047, 1319, 1568];
+      noise({ t: t, d: 0.2, v: 0.55, ft: 'highpass', f: 3200 });
+      noise({ t: t, d: 0.6, v: 0.7, ft: 'lowpass', f: 1100, f2: 90 });
+      hit('tria', 120, t, 0.6, 0.5, 34);
+      hit('p25', 880, t, 0.18, 0.2, 700);
+      for (i = 0; i < up.length; i++) blip('p25', up[i], t + 0.16 + i * 0.05, 0.14, 0.15);
+      blip('p50', 2093, t + 0.5, 0.35, 0.15);
+      duck(0.35, 1.1);
+    },
     land: function (t, o) {
       var i = unit(o.intensity, 0.6);
       hit('tria', 220, t, 0.17, 0.1 + 0.14 * i, 60);

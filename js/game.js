@@ -195,7 +195,7 @@
     pauseOpen = false; runOver = false;
     G.mode = mode; G.paused = false; confetti = false;
     timers = []; toastQueue = []; G.toast = null; G.banner = null; G.fx = []; G.coach = null;
-    G.speedPop = null; G.clockPop = null; G.stamp = null; G.windLocked = false; G.windClock = 0;
+    G.speedPop = null; G.clockPop = null; G.stamp = null; G.smash = null; G.windLocked = false; G.windClock = 0;
     tone(null);
   }
 
@@ -476,11 +476,26 @@
     if (q === 'perfect') G.flash = { t: 0.1, dur: 0.1, color: '#ffffff', alpha: 0.5 };
     sfx('impact', { quality: q, power: Math.min(1, p) });
     vibrate(q === 'perfect' ? [0, 30, 100, 80] : (q === 'great' ? 30 : (q === 'good' ? 15 : [0, 60, 50, 60])));
+    if (sw.over && q === 'perfect' && built.kind === 'normal') startSmash();
     spawnDust(0, 0, 5, ['#74c450', '#3c8f58', '#ffe9c2']);
     followF0 = (u > C.sweetPos) ? (u - C.sweetPos) / (1 - C.sweetPos) * 0.2 : 0;
     G.golfer = { phase: 'follow', b: Math.min(1, sw.p / C.overMax), d: 1, f: followF0, time: G.time };
     G.phase = 'hitstop';
     G.hint = ''; G.coach = null;
+  }
+
+  // KLD SMASH 연출: 레드존에서 퍼펙트를 맞췄을 때만. 잠깐 멈춘 화면 + 번쩍임 + 충격파·집중선·불꽃 + 큰 배너 (js/render.js drawSmash)
+  function startSmash() {
+    if (quiet()) return;
+    var D = 1.5;
+    G.smash = { t: D, dur: D, seed: (Math.random() * 1e6) | 0 };
+    G.stamp = null;                                         // 큰 배너가 대신한다
+    hitstop = 0.38;                                         // 프리즈 프레임
+    G.shake = { t: 0.5, dur: 0.5, mag: 7 };
+    G.flash = { t: 0.3, dur: 0.3, color: '#fff6c0', alpha: 0.95, max: 0.95 };
+    sfx('smash');
+    vibrate([0, 40, 50, 120, 60, 200]);
+    after(0.5, function () { sfx('crowdCheer', { intensity: 1 }); G.crowd = 1; });
   }
 
   // ── 비행 ────────────────────────────────────────────────
@@ -883,6 +898,7 @@
     if (G.shake) { G.shake.t -= dt; if (G.shake.t <= 0) G.shake = null; }
     if (G.flash) { G.flash.t -= dt; if (G.flash.t <= 0) G.flash = null; }
     if (G.stamp) { G.stamp.t -= dt; if (G.stamp.t <= 0) G.stamp = null; }
+    if (G.smash) { G.smash.t -= dt; if (G.smash.t <= 0) G.smash = null; }
     if (G.speedPop) { G.speedPop.t -= dt; if (G.speedPop.t <= 0) G.speedPop = null; }
     if (G.clockPop) { G.clockPop.t -= dt; if (G.clockPop.t <= 0) G.clockPop = null; }
     if (G.banner && G.banner.t < 90) { G.banner.t -= dt; if (G.banner.t <= 0) G.banner = null; }
