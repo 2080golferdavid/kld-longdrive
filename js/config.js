@@ -23,8 +23,9 @@
       subtitle: 'KOREA LONG DRIVE',
       eventName: { ko: 'KLD 장타 챔피언십', en: 'KLD LONG DRIVE CHAMPIONSHIP' },
       tagline: { ko: '8비트 장타 챌린지', en: '8-BIT LONG DRIVE CHALLENGE' },
-      // 그리드 옆 광고판 문구 (영문 대문자·숫자). 'LOGO' 는 KLD 로고 간판.
-      sponsors: ['LOGO', 'KOREA LONG DRIVE', 'GO LONG', 'LOGO', 'FULL SEND', '400 CLUB'],
+      // 그리드 옆 광고판 문구 (영문 대문자·숫자). 'LOGO' 는 KLD 로고 간판, 'SUMMIT' 은 KOREA LONG DRIVE SUMMIT 2026 로고 간판.
+      // 100야드마다 하나씩 (k=1..6 → 175·275·375·475·575·675야드, 순서는 k % 6 번째 칸).
+      sponsors: ['LOGO', 'KOREA LONG DRIVE', 'GO LONG', 'LOGO', 'SUMMIT', '400 CLUB'],
       // 공유할 때 붙는 주소. 비워 두면 현재 페이지 주소를 쓴다. (배포 후 실제 주소로 채우는 것을 권장)
       shareUrl: 'https://kld-longdrive-two.vercel.app',
       hashtags: ['KLD', '코리아롱드라이브', '장타', '장타왕'],

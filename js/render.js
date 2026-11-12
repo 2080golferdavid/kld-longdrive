@@ -551,6 +551,14 @@
       }
       text = brand.name;
     }
+    if (text === 'SUMMIT' && KLD.summit && KLD.summit.available()) {
+      // KOREA LONG DRIVE SUMMIT 2026 로고 (흰 판 위의 작은 픽셀 스프라이트, js/summit-logo.js)
+      var sw = KLD.summit.w + 6, sh = KLD.summit.h + 6, sbx = sx - Math.round(sw / 2);
+      if (postH) { P.rect(g, sbx + 6, base, 2, postH, th.ink); P.rect(g, sbx + sw - 8, base, 2, postH, th.ink); }
+      P.panel(g, sbx, base - sh, sw, sh, '#ffffff', th.ink);
+      KLD.summit.draw(g, sbx + 3, base - sh + 3);
+      return;
+    }
     var tw = T.measure(text), bw = tw + 8;
     var bx = sx - Math.round(bw / 2);
     var bg = (k % 3 === 0) ? brand.colors.primary : ((k % 3 === 1) ? brand.colors.dark : '#f4f4f0');
