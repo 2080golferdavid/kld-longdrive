@@ -23,6 +23,7 @@
       plays: 0,
       wins: 0,
       lastName: '',
+      onlineToken: '',        // 온라인 랭킹에서 이 기기를 구분하는 비밀 값 (js/online.js)
       seenHowto: false,
       offsets: null,          // 입력 지연 보정 { touch, mouse, key } (ms)
       ranking: []             // [{ name, m, stage, ts }]
@@ -47,6 +48,7 @@
           if (num(obj.plays, 0, 1e9) != null) base.plays = +obj.plays;
           if (num(obj.wins, 0, 1e9) != null) base.wins = +obj.wins;
           if (typeof obj.lastName === 'string') base.lastName = cleanName(obj.lastName);
+          if (typeof obj.onlineToken === 'string' && /^[0-9a-f]{16,64}$/.test(obj.onlineToken)) base.onlineToken = obj.onlineToken;
           base.seenHowto = !!obj.seenHowto;
           if (obj.offsets && typeof obj.offsets === 'object') {
             var o = {}, ok = true;
@@ -149,6 +151,7 @@
     var d = get();
     d.ranking = [];
     d.best = 0; d.bestStage = -1; d.lastName = '';
+    d.onlineToken = '';          // 다음 사람은 온라인 랭킹에서도 새 기록으로 시작한다
     save();
   }
 

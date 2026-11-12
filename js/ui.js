@@ -189,6 +189,26 @@
     return { wrap: wrap, panel: panel };
   }
 
+  // 타이틀 오른쪽 위의 언어 버튼 (한국어 | EN). 설정 메뉴를 열지 않아도 바로 바꿀 수 있다.
+  function langSwitch() {
+    var box = el('div', 'lang-switch');
+    box.setAttribute('role', 'group');
+    box.setAttribute('aria-label', 'Language');
+    var cur = settings().lang;
+    [['ko', '한국어'], ['en', 'EN']].forEach(function (L) {
+      var b = btn(L[1], 'small' + (cur === L[0] ? ' on' : ''), function () {
+        if (cur === L[0]) return;
+        KLD.storage.setSetting('lang', L[0]);
+        if (handlers.onSettingsChanged) handlers.onSettingsChanged();
+        showTitle();
+      });
+      b.setAttribute('aria-pressed', cur === L[0] ? 'true' : 'false');
+      b.setAttribute('lang', L[0]);
+      box.appendChild(b);
+    });
+    return box;
+  }
+
   // ── 타이틀 ──────────────────────────────────────────────
   function showTitle() {
     var wrap = el('div', 'layer title');
@@ -214,6 +234,7 @@
       : t('title.noBest', { balls: rules.ballsPerSet, club: rules.clubLineYd }));
     add(menu, el('div', 'title-hint', t('title.hint')), start, grid, foot);
     wrap.appendChild(menu);
+    wrap.appendChild(langSwitch());
     show(wrap, showTitle);
   }
 
@@ -263,10 +284,68 @@
     if (focusIdx != null && toggles[focusIdx]) focusEl(toggles[focusIdx]);
   }
 
+  // ── 랭킹 탭 (이 기기 / 전체) ──────────────────────────────
+  function rankTabs(active, onClose) {
+    var row = el('div', 'btn-row rank-tabs');
+    [['mine', 'rank.tabMine', showRanking], ['world', 'rank.tabWorld', showWorldRanking]].forEach(function (T) {
+      var b = btn(t(T[1]), 'small' + (active === T[0] ? ' on' : ''), function () { if (active !== T[0]) T[2](onClose); });
+      b.setAttribute('aria-pressed', active === T[0] ? 'true' : 'false');
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  // 실시간 최장타 랭킹: 서버의 상위 기록 + 내 최고 기록이 전체에서 몇 위(상위 몇 %)인지
+  function showWorldRanking(onClose) {
+    var m = modal('ranking');
+    add(m.panel, el('h2', null, t('rank.worldTitle')), rankTabs('world', onClose));
+    var body = el('div', 'scroll');
+    var status = el('p', 'dim center', t('world.loading'));
+    body.appendChild(status);
+    var close = btn(t('common.close'), 'primary', function () { if (onClose) onClose(); else hide(); });
+    close.setAttribute('data-cancel', '1'); close.setAttribute('data-focus', '1');
+    add(m.panel, body, add(el('div', 'btn-row'), close));
+    show(m.wrap, showWorldRanking, [onClose]);
+
+    var on = KLD.online, d = KLD.storage.get(), unit = settings().unit;
+    function fail() {
+      status.textContent = t('world.fail');
+      add(body, btn(t('world.retry'), 'small', function () { showWorldRanking(onClose); }));
+    }
+    if (!on || !on.enabled()) { fail(); return; }
+    Promise.all([on.top(30), d.best > 0 ? on.standing(d.best) : Promise.resolve(null)]).then(function (res) {
+      if (!body.parentNode) return;                      // 그 사이 다른 화면으로 넘어갔다
+      var list = res[0], me = res[1];
+      if (!list) { fail(); return; }
+      body.removeChild(status);
+      if (d.best > 0 && me) {
+        var p = on.pct(me.rank, me.total);
+        add(body, el('div', 'verdict good', t('world.me', { v: distU(d.best, unit), rank: me.rank, total: me.total }) + (p ? ' ' + t('world.top', { pct: p }) : '')));
+      } else if (!(d.best > 0)) {
+        add(body, el('p', 'dim small center', t('world.noBest')));
+      }
+      if (!list.length) { add(body, el('p', 'dim center', t('world.empty'))); return; }
+      var tbl = el('div', 'rank-list');
+      var myName = d.lastName || 'PLAYER', marked = false;
+      list.forEach(function (r, i) {
+        var isMe = !marked && d.best > 0 && r.name === myName && Math.abs(r.meters - d.best) < 0.02;
+        if (isMe) marked = true;
+        var row = el('div', 'rank-row' + (i === 0 ? ' top' : '') + (isMe ? ' me' : ''));
+        add(row,
+          el('span', 'c-rank', String(r.rank)),
+          el('span', 'c-name', r.name),
+          el('span', 'c-stage', t('rank.stage.' + Math.max(0, Math.min(4, r.stage | 0)))),
+          el('span', 'c-dist', distU(r.meters, unit)));
+        tbl.appendChild(row);
+      });
+      body.appendChild(tbl);
+    });
+  }
+
   // ── 내 기록 ─────────────────────────────────────────────
   function showRanking(onClose) {
     var m = modal('ranking');
-    add(m.panel, el('h2', null, t('rank.title')));
+    add(m.panel, el('h2', null, t('rank.title')), rankTabs('mine', onClose));
     var body = el('div', 'scroll');
     var list = KLD.storage.get().ranking.slice();          // 저장된 줄 전부 (결과 화면이 알려 주는 순위와 같은 목록)
     var unit = settings().unit;
@@ -455,6 +534,17 @@
     if (d.club) add(body, el('div', 'badge', t('final.club', { v: d.clubYd })));
     if (d.pb) add(body, el('div', 'verdict good', t('final.pb')));
     if (d.rank > 0) add(body, el('div', 'dim small center', t('final.rank', { rank: d.rank })));
+    if (d.world && d.best > 0) {
+      // 전체 순위는 서버 응답을 기다렸다가 채운다 (못 받으면 조용히 지운다)
+      var worldEl = el('div', 'world-rank', t('world.loading'));
+      add(body, worldEl);
+      d.world.then(function (r) {
+        if (!worldEl.parentNode) return;
+        if (!r) { worldEl.parentNode.removeChild(worldEl); return; }
+        var p = KLD.online.pct(r.rank, r.total);
+        worldEl.textContent = t('final.world', { rank: r.rank, total: r.total }) + (p ? ' · ' + t('final.worldTop', { pct: p }) : '');
+      });
+    }
     if (d.best > 0) {
       // 이름은 선택 사항: 기록 카드와 내 기록 목록에 표시된다
       var row = el('div', 'name-row');

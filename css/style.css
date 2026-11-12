@@ -121,10 +121,19 @@ h2 { font-size: calc(var(--u) * 12); text-align: center; color: #7ee6f7; letter-
 .landscape .title-menu .btn.big { min-height: calc(var(--u) * 24); flex: 0 0 auto; padding-left: calc(var(--u) * 12); padding-right: calc(var(--u) * 12); }
 .landscape .title-grid { display: flex; flex: 0 1 auto; }
 .landscape .title-hint { display: none; }
+.lang-switch {
+  position: absolute; top: calc(var(--u) * 4); right: calc(var(--u) * 4);
+  display: flex; gap: calc(var(--u) * 2); pointer-events: auto;
+}
+.lang-switch .btn { min-width: calc(var(--u) * 28); background: rgba(20, 28, 51, 0.85); color: #aab4d0; }
+.lang-switch .btn.on { background: #e60012; color: #ffffff; }
 .landscape .title-foot { flex-basis: 100%; }
 
 /* ── 목록 ─────────────────────────────────────────────── */
 .rank-list { display: flex; flex-direction: column; font-family: "Galmuri9", "Galmuri11", sans-serif; font-size: calc(var(--u) * 10); }
+.rank-tabs { margin-bottom: calc(var(--u) * 4); }
+.btn.small.on { background: #e60012; color: #ffffff; }
+.world-rank { text-align: center; color: #ffd23f; font-size: calc(var(--u) * 10); margin: calc(var(--u) * 2) 0; font-family: "Galmuri9", "Galmuri11", sans-serif; }
 .rank-row { display: flex; gap: calc(var(--u) * 4); padding: calc(var(--u) * 1) calc(var(--u) * 3); align-items: baseline; }
 .rank-row:nth-child(odd) { background: rgba(255, 255, 255, 0.05); }
 .rank-row.top .c-name { color: #ffd23f; }
@@ -133,7 +142,7 @@ h2 { font-size: calc(var(--u) * 12); text-align: center; color: #7ee6f7; letter-
 .c-stage { color: #7ee6f7; flex: 0 0 auto; }
 .c-dist { text-align: right; color: #ffd23f; flex: 0 0 auto; min-width: calc(var(--u) * 38); }
 .rank-row.me { background: #ffd23f; color: #141c33; }
-.rank-row.me .c-rank, .rank-row.me .c-dist { color: #141c33; }
+.rank-row.me .c-rank, .rank-row.me .c-dist, .rank-row.me .c-name, .rank-row.me .c-stage { color: #141c33; }
 .rank-row.out { opacity: 0.6; }
 .rank-row.me.out { opacity: 1; }
 .cutline { text-align: center; color: #ff8f85; padding: calc(var(--u) * 1) 0; }

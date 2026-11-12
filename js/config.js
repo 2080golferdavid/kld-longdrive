@@ -10,6 +10,13 @@
   KLD.config = {
     version: '0.3.0',          // 정보용 (코드에서 읽지 않는다)
 
+    // ── 온라인 랭킹 (Supabase) ──────────────────────────────
+    // key 는 공개용(publishable) 키라 코드에 있어도 된다. 서버는 ld_* 함수만 열려 있다. url 을 비우면 온라인 기능이 꺼진다.
+    online: {
+      url: 'https://erjpksongpivpxadqxll.supabase.co/rest/v1',
+      key: 'sb_publishable_em4kaVn87xCA0ncU8tVcIA_Mz3foO-r'
+    },
+
     // ── 브랜드 ─────────────────────────────────────────────
     brand: {
       name: 'KLD',                              // 픽셀 로고 데이터(js/logo-data.js)가 없을 때 쓰는 글자

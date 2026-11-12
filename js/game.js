@@ -179,6 +179,7 @@
       run.entryTs = r.ts; run.rank = r.rank;
     }
     ST.save();
+    if (run.bestOverall > 0 && KLD.online) run.world = KLD.online.submit();    // 전체 랭킹에 내 최고 기록 올리기 (실패해도 게임은 그대로)
   }
 
   function busyPhase() {
@@ -793,7 +794,7 @@
     var data = {
       won: won, stage: stage, title: title, sub: won ? t('final.championSub') : '',
       best: best, bestText: best > 0 ? distText(best) : t('final.norec'), pb: !!run.pb && best > 0,
-      shot: run.bestShot, unit: G.unit, lastName: ST.get().lastName, rank: run.rank || 0,
+      shot: run.bestShot, unit: G.unit, lastName: ST.get().lastName, rank: run.rank || 0, world: run.world || null,
       club: !!run.club, clubYd: rules().clubLineYd,
       continueLabel: canContinue ? t('final.continue', { round: t('round.' + out.roundId), n: run.continues }) : ''
     };
@@ -809,7 +810,10 @@
     }
     G.banner = null; G.monitor.visible = false;
     KLD.ui.showFinal(data, {
-      onName: function (name) { if (run.entryTs) ST.renameEntry(run.entryTs, name); else { ST.get().lastName = ST.cleanName(name); ST.save(); } },
+      onName: function (name) {
+        if (run.entryTs) ST.renameEntry(run.entryTs, name); else { ST.get().lastName = ST.cleanName(name); ST.save(); }
+        if (KLD.online) KLD.online.submitSoon();       // 바뀐 이름을 전체 랭킹에도 반영
+      },
       onShare: function () { track('share_click', { at: 'final' }); KLD.share.open(cardData({ title: title, won: won, stage: stage, pb: data.pb })); },
       onContinue: function () {
         run.continues--; run.finished = false; runOver = false;
