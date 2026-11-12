@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KLD 픽셀 로고 미리보기</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 20px; background: #0d1220; color: #e8ecf5; font: 14px/1.5 -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 28px 0 8px; color: #ffd23f; font-weight: 600; }
+  p { margin: 0 0 8px; color: #9aa6c4; }
+  canvas, img.px { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .card { background: #141c33; border: 2px solid #2a3558; padding: 10px; }
+  .card.light { background: #8fd0f8; border-color: #5fa8d8; color: #10243a; }
+  .card small { display: block; margin-top: 6px; color: inherit; opacity: .75; }
+  .orig img { max-width: 320px; display: block; }
+  #status { font-family: ui-monospace, Menlo, monospace; white-space: pre-wrap; background: #141c33; border: 2px solid #2a3558; padding: 10px; }
+  #status.bad { border-color: #e60012; }
+</style>
+</head>
+<body>
+<h1>KLD 픽셀 로고 미리보기</h1>
+<p>공식 로고(<code>assets/logo/*.png</code>)에서 <code>tools/build-logo.js</code>로 만든 8비트 버전입니다. 게임 캔버스와 같은 방식(<code>KLD.logo</code>)으로 그립니다.</p>
+<div id="status">불러오는 중…</div>
+
+<h2>1. 타이틀 화면 예시 (세로 화면, 내부 해상도 그대로 3배 확대)</h2>
+<div class="row">
+  <div class="card"><canvas id="titleNight" width="234" height="300"></canvas><small>밤 · 흰 글자(light)</small></div>
+  <div class="card light"><canvas id="titleDay" width="234" height="300"></canvas><small>낮 · 검은 글자(dark)</small></div>
+</div>
+
+<h2>2. 필드 간판 예시</h2>
+<div class="row">
+  <div class="card light"><canvas id="boards" width="264" height="96"></canvas><small>빨간 광고판(mark48, 흰색 팔레트) · 흰 광고판(mark64, dark) · 62×24 백드롭(자동 선택 → mark56) · 잔디 위 직접(mark32 + outline)</small></div>
+</div>
+
+<h2>3. 크기별 스프라이트 (2배 확대)</h2>
+<div class="row" id="sprites"></div>
+
+<h2>4. DOM 이미지로 쓰기 (dataURL)</h2>
+<div class="row">
+  <div class="card"><img class="px" id="domLight" alt="KLD 로고"><small>KLD.logo.dataURL('full200', 'light', 2)</small></div>
+  <div class="card light"><img class="px" id="domDark" alt="KLD 로고"><small>KLD.logo.dataURL('mark160', 'dark', 2)</small></div>
+  <div class="card"><img class="px" id="domGold" alt="KLD 로고"><small>사용자 팔레트(금색, 우승 화면용 예시)</small></div>
+</div>
+
+<h2>5. 원본</h2>
+<div class="row orig">
+  <div class="card"><img src="../assets/logo/kld-logo-light.png" alt="KLD 원본 로고 (흰 글자)"><small>kld-logo-light.png</small></div>
+  <div class="card light"><img src="../assets/logo/kld-logo-dark.png" alt="KLD 원본 로고 (검은 글자)"><small>kld-logo-dark.png</small></div>
+</div>
+
+<script src="../js/logo-data.js"></script>
+<script src="../js/logo.js"></script>
+<script>
+(function () {
+  'use strict';
+  var status = document.getElementById('status');
+  var problems = [];
+  function fail(msg) { problems.push(msg); }
+
+  function scaleCanvas(c, k) {
+    c.style.width = (c.width * k) + 'px';
+    c.style.height = (c.height * k) + 'px';
+    var g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    return g;
+  }
+
+  function sky(g, W, H, bands) {
+    var hs = [0.34, 0.26, 0.22, 0.18], y = 0;
+    for (var i = 0; i < bands.length; i++) {
+      var h = Math.round(H * hs[i]);
+      g.fillStyle = bands[i];
+      g.fillRect(0, y, W, H - y);
+      if (i > 0) for (var x = 0; x < W; x += 2) g.fillRect(x, y - 1, 1, 1);
+      y += h;
+    }
+  }
+
+  function ground(g, W, top, H, night) {
+    g.fillStyle = night ? '#236b3c' : '#2f8a44';
+    g.fillRect(0, top, W, H - top);
+    g.fillStyle = night ? '#4fae52' : '#6cc04a';
+    g.fillRect(0, top + 8, W, 26);
+    g.fillStyle = night ? '#44a049' : '#5fb242';
+    for (var x = 0; x < W; x += 28) g.fillRect(x, top + 8, 14, 26);
+    g.fillStyle = '#f4f4f4';
+    g.fillRect(0, top + 8, W, 1);
+    g.fillRect(0, top + 33, W, 1);
+  }
+
+  if (!window.KLD || !KLD.logo || !KLD.logo.available()) {
+    status.className = 'bad';
+    status.textContent = '실패: KLD.logo 또는 로고 데이터를 불러오지 못했습니다.';
+    return;
+  }
+
+  // 1) 타이틀 예시
+  (function () {
+    var c = document.getElementById('titleNight'), g = scaleCanvas(c, 3), W = c.width, H = c.height;
+    sky(g, W, 224, ['#0b1030', '#131a45', '#1c2760', '#2a3a80']);
+    g.fillStyle = '#ffffff';
+    [[20, 14], [60, 40], [200, 22], [150, 70], [96, 8], [30, 96], [214, 110], [120, 132]].forEach(function (p) { g.fillRect(p[0], p[1], 1, 1); });
+    ground(g, W, 224, H, true);
+    var r = KLD.logo.drawFit(g, 'full', W / 2, 46, W - 16, { variant: 'light', align: 'center' });
+    if (!r) fail('타이틀(밤) 로고를 그리지 못함');
+    else if (r.key !== 'full200') fail('타이틀(밤)에서 예상과 다른 크기: ' + r.key);
+  })();
+  (function () {
+    var c = document.getElementById('titleDay'), g = scaleCanvas(c, 3), W = c.width, H = c.height;
+    sky(g, W, 224, ['#2f8fe8', '#4fa6f0', '#7cc0f7', '#a9d8fb']);
+    ground(g, W, 224, H, false);
+    var r = KLD.logo.drawFit(g, 'full', W / 2, 46, W - 16, { variant: 'dark', align: 'center' });
+    if (!r) fail('타이틀(낮) 로고를 그리지 못함');
+  })();
+
+  // 2) 간판 예시
+  (function () {
+    var c = document.getElementById('boards'), g = scaleCanvas(c, 3);
+    g.fillStyle = '#8fd0f8'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#3f9d4d'; g.fillRect(0, 70, c.width, 26);
+    // 빨간 광고판 + 흰 글자 로고
+    g.fillStyle = '#141c33'; g.fillRect(6, 44, 60, 22); g.fillRect(10, 66, 2, 6); g.fillRect(60, 66, 2, 6);
+    g.fillStyle = '#e60012'; g.fillRect(7, 45, 58, 20);
+    KLD.logo.draw(g, 'mark48', 36, 55, { variant: { r: '#ffffff', f: '#ffffff', e: '#ffffff', w: '#e60012' }, align: 'center', valign: 'middle' });
+    // 흰 광고판 + 검은 글자 로고
+    g.fillStyle = '#141c33'; g.fillRect(76, 40, 76, 26); g.fillRect(82, 66, 2, 6); g.fillRect(144, 66, 2, 6);
+    g.fillStyle = '#ffffff'; g.fillRect(77, 41, 74, 24);
+    KLD.logo.draw(g, 'mark64', 114, 53, { variant: 'dark', align: 'center', valign: 'middle' });
+    // 남색 배경막(62x24, 티 뒤 백드롭 크기) + 흰 글자 로고: 들어가는 가장 큰 것을 자동 선택
+    g.fillStyle = '#0b1030'; g.fillRect(160, 40, 66, 28);
+    g.fillStyle = '#141c33'; g.fillRect(162, 42, 62, 24);
+    var r = KLD.logo.drawFit(g, 'mark', 193, 54, 62, { maxH: 24, variant: 'light', align: 'center', valign: 'middle' });
+    if (!r) fail('간판 로고를 그리지 못함');
+    else if (r.key !== 'mark56') fail('62x24 백드롭에 예상과 다른 크기: ' + r.key);
+    // 잔디 위에 직접: outline 옵션으로 윤곽 테두리
+    var o = KLD.logo.draw(g, 'mark32', 244, 84, { variant: 'light', outline: '#141c33', align: 'center', valign: 'middle' });
+    if (!o) fail('테두리 옵션 로고를 그리지 못함');
+    else if (o.w !== 32 || o.h !== 11) fail('테두리 옵션이 본체 크기를 바꿈: ' + o.w + 'x' + o.h);
+  })();
+
+  // 3) 크기별
+  (function () {
+    var host = document.getElementById('sprites');
+    KLD.logo.keys().forEach(function (key) {
+      ['light', 'dark'].forEach(function (v) {
+        var info = KLD.logo.info(key);
+        var card = document.createElement('div');
+        card.className = 'card' + (v === 'dark' ? ' light' : '');
+        var c = document.createElement('canvas');
+        c.width = info.w; c.height = info.h;
+        var g = scaleCanvas(c, 2);
+        if (!KLD.logo.draw(g, key, 0, 0, { variant: v })) fail(key + '/' + v + ' 그리기 실패');
+        // 실제로 픽셀이 찍혔는지 확인
+        var d = g.getImageData(0, 0, c.width, c.height).data, n = 0, soft = 0;
+        for (var i = 3; i < d.length; i += 4) { if (d[i] === 255) n++; else if (d[i] !== 0) soft++; }
+        if (n === 0) fail(key + '/' + v + ' 가 비어 있음');
+        if (soft > 0) fail(key + '/' + v + ' 에 반투명 픽셀 ' + soft + '개 (번짐)');
+        var s = document.createElement('small');
+        s.textContent = key + ' · ' + info.w + '×' + info.h + ' · ' + v;
+        card.appendChild(c); card.appendChild(s);
+        host.appendChild(card);
+      });
+    });
+  })();
+
+  // 4) DOM 이미지
+  (function () {
+    var a = KLD.logo.dataURL('full200', 'light', 2);
+    var b = KLD.logo.dataURL('mark160', 'dark', 2);
+    var gold = KLD.logo.dataURL('mark160', { r: '#ffd23f', f: '#fff6c0', e: '#b8860b', w: '#ffffff' }, 2);
+    if (a.indexOf('data:image/png') !== 0) fail('dataURL(light) 생성 실패');
+    if (b.indexOf('data:image/png') !== 0) fail('dataURL(dark) 생성 실패');
+    if (gold.indexOf('data:image/png') !== 0) fail('dataURL(사용자 팔레트) 생성 실패');
+    document.getElementById('domLight').src = a;
+    document.getElementById('domDark').src = b;
+    document.getElementById('domGold').src = gold;
+  })();
+
+  // 5) 캔버스가 오염되지 않았는지 (기록 카드 저장이 가능한지)
+  try { document.getElementById('titleNight').toDataURL('image/png'); }
+  catch (e) { fail('캔버스가 오염됨: ' + e.message); }
+
+  // 6) 실제 브라우저에서의 런타임 동작 (tests/logo.test.js 는 가짜 캔버스로 같은 것을 확인한다)
+  var runtimeChecks = 0;
+  (function () {
+    function expect(name, ok, detail) { runtimeChecks++; if (!ok) fail(name + (detail ? ' (' + detail + ')' : '')); }
+    function stats(c) {
+      var d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, solid = 0, soft = 0;
+      for (var i = 3; i < d.length; i += 4) { if (d[i] === 255) solid++; else if (d[i] !== 0) soft++; }
+      return { solid: solid, soft: soft };
+    }
+    function pixelAtFirst(c, key, slot) {
+      var map = KLD.logo.decode(key), w = KLD.logo.info(key).w, i = Array.prototype.indexOf.call(map, slot);
+      var d = c.getContext('2d').getImageData(i % w, (i / w) | 0, 1, 1).data;
+      return [d[0], d[1], d[2], d[3]].join(',');
+    }
+    var map = KLD.logo.decode('mark96'), n = [0, 0, 0, 0, 0];
+    for (var i = 0; i < map.length; i++) n[map[i]]++;
+    var all = n[1] + n[2] + n[3] + n[4];
+    var light = KLD.logo.canvas('mark96', 'light');
+    expect('기본 팔레트 픽셀 수', stats(light).solid === all && stats(light).soft === 0, stats(light).solid + '/' + all);
+    expect("{ w: '' } 는 공 안쪽만 비운다", stats(KLD.logo.canvas('mark96', { w: '' })).solid === all - n[4]);
+    expect("'transparent' 는 그리지 않음", stats(KLD.logo.canvas('mark96', { w: 'transparent' })).solid === all - n[4]);
+    expect('CSS 색 이름 white', pixelAtFirst(KLD.logo.canvas('mark96', { f: 'white' }), 'mark96', 2) === '255,255,255,255');
+    expect("{ base: 'dark' } 는 dark 를 물려받는다", pixelAtFirst(KLD.logo.canvas('mark96', { base: 'dark', w: '' }), 'mark96', 2) === '0,0,0,255');
+    expect("variant 'red' 는 light 로", KLD.logo.canvas('mark96', 'red') === light);
+    expect("키 'constructor' 는 없는 키", KLD.logo.canvas('constructor', 'light') === null && KLD.logo.info('toString') === null);
+    var half = KLD.logo.canvas('mark32', 'light', 'rgba(20, 28, 51, 0.5)');
+    expect('반투명 테두리 색은 불투명으로', half.width === 34 && stats(half).soft === 0 && stats(half).solid > stats(KLD.logo.canvas('mark32', 'light')).solid);
+    expect("테두리 'transparent' 는 테두리 없음", KLD.logo.canvas('mark32', 'light', 'transparent') === KLD.logo.canvas('mark32', 'light'));
+    // 투명도: 음수·NaN 은 그리지 않고, 0.5 는 반투명으로
+    var t = document.createElement('canvas');
+    t.width = 40; t.height = 16;
+    var tg = t.getContext('2d');
+    var r1 = KLD.logo.draw(tg, 'mark32', 2, 2, { alpha: -0.2 }), r2 = KLD.logo.draw(tg, 'mark32', 2, 2, { alpha: NaN });
+    var s0 = stats(t);
+    expect('alpha 음수·NaN 은 그리지 않는다', !!r1 && !!r2 && s0.solid === 0 && s0.soft === 0, JSON.stringify(s0));
+    KLD.logo.draw(tg, 'mark32', 2, 2, { alpha: 0.5 });
+    var s1 = stats(t);
+    expect('alpha 0.5 는 반투명', s1.solid === 0 && s1.soft > 0 && tg.globalAlpha === 1, JSON.stringify(s1));
+    tg.clearRect(0, 0, 40, 16);
+    KLD.logo.draw(tg, 'mark32', 2, 2, { alpha: 1.7 });
+    expect('alpha 1 초과는 1 로', stats(t).solid > 0 && stats(t).soft === 0);
+    var r3 = KLD.logo.draw(tg, 'mark32', 2, 2, { scale: 'abc' });
+    expect('이상한 scale 은 1배', !!r3 && r3.w === 32);
+    expect('좌표가 숫자가 아니면 null', KLD.logo.draw(tg, 'mark32', NaN, 0) === null);
+  })();
+
+  var keys = KLD.logo.keys();
+  if (problems.length) {
+    status.className = 'bad';
+    status.textContent = '문제 ' + problems.length + '건\n' + problems.join('\n');
+  } else {
+    status.textContent = 'OK — 스프라이트 ' + keys.length + '종 (' + keys.join(', ') + ')\n' +
+      '브랜드 빨강 ' + KLD.logo.colors().red + ' · 캔버스 저장 가능(오염 없음) · 반투명 픽셀 없음 · 런타임 점검 ' + runtimeChecks + '개 통과';
+  }
+  window.__logoPreview = { ok: problems.length === 0, problems: problems, keys: keys, runtimeChecks: runtimeChecks };
+})();
+</script>
+</body>
+</html>

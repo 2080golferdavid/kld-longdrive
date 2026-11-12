@@ -1,0 +1,8 @@
+# Vercel 에 올리지 않는 파일 (게임 실행에는 index.html, css/, js/, assets/ 만 필요하다)
+docs/
+tests/
+tools/
+.claude/
+IMG_*.PNG
+Thumbs.db
+*.md

@@ -1,0 +1,25 @@
+[
+  { "key": "mark32", "kind": "mark", "width": 32, "manual": [
+    ".......................rrrr.....",
+    "......................rwwwwr....",
+    ".............rrrrrrrrrrrrrrrrrr.",
+    ".rrrrrrrrrrrrr.................r",
+    "................................",
+    "...ff..ff....ff.......fffffff...",
+    "...ff.ff.....ff.......ff...fff..",
+    "..ffff......ff.......ff....ff...",
+    "..ffff......ff.......ff....ff...",
+    ".ff.ff.....ffffff...ff...fff....",
+    ".ff..ff....ffffff...fffffff....."
+  ] },
+  { "key": "mark48"  , "kind": "mark", "width": 48, "outline": "none", "letterT": 0.6 },
+  { "key": "mark56"  , "kind": "mark", "width": 56, "outline": "none", "letterT": 0.6 },
+  { "key": "mark64"  , "kind": "mark", "width": 64, "outline": "none", "letterT": 0.6 },
+  { "key": "mark96"  , "kind": "mark", "width": 96, "outline": "inner" },
+  { "key": "mark128" , "kind": "mark", "width": 128, "outline": "inner" },
+  { "key": "mark160" , "kind": "mark", "width": 160, "outline": "inner" },
+  { "key": "mark200" , "kind": "mark", "width": 200, "outline": "inner" },
+  { "key": "full160" , "kind": "full", "width": 160, "outline": "inner" },
+  { "key": "full200" , "kind": "full", "width": 200, "outline": "inner" },
+  { "key": "full240" , "kind": "full", "width": 240, "outline": "inner" }
+]

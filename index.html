@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#141c33">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+<title>KLD LONG DRIVE — 6구 안에 400야드?</title>
+<meta name="description" content="탭 세 번으로 치는 8비트 장타 대회. 설치 없이 바로 티샷.">
+
+<!--
+  링크 미리보기(카카오톡·인스타그램·네이버)는 자바스크립트를 실행하지 않으므로 여기 값을 직접 고쳐야 한다.
+  배포할 때 og:url 과 og:image 를 실제 주소(https://… 로 시작하는 절대 주소)로 바꿀 것.
+-->
+<meta property="og:type" content="website">
+<meta property="og:title" content="KLD LONG DRIVE — 6구 안에 400야드?">
+<meta property="og:description" content="탭 세 번으로 치는 8비트 장타 대회. 설치 없이 바로 티샷.">
+<meta property="og:image" content="https://kld-longdrive.vercel.app/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://kld-longdrive.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+
+<!--
+  픽셀 폰트 Galmuri (SIL OFL). 못 불러오면 시스템 글꼴로 대체되어도 게임은 그대로 동작한다.
+  media="print" → onload 로 바꾸는 방식이라 CDN 이 느리거나 막혀 있어도 첫 화면이 멈추지 않는다.
+-->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" id="font-css" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="game" width="320" height="200" aria-label="KLD LONG DRIVE 게임 화면"></canvas>
+  <div id="ui" role="dialog" aria-live="polite"></div>
+</div>
+<noscript><p style="color:#fff;font-family:sans-serif;padding:24px">이 게임은 자바스크립트가 필요합니다.</p></noscript>
+
+<script src="js/config.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/px.js"></script>
+<script src="js/text.js"></script>
+<script src="js/logo-data.js"></script>
+<script src="js/logo.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/shot.js"></script>
+<script src="js/tournament.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/golfer.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/share.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
